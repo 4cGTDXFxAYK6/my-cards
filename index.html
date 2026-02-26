@@ -3,98 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MyCards. Pro</title>
+    <title>MyCards. Noir</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root {
-            --bg-color: #f2f4f6;
-            --card-radius: 16px;
-            --accent-pink: #e91e63;
+            /* ダークで高級感のある配色 */
+            --bg-deep: #121418;
+            --card-bg: #ffffff;
+            --text-main: #ffffff;
+            --accent-pink: #ff2d55;
+            --card-radius: 18px;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--bg-color);
-            margin: 0; padding: 0; color: #111;
+            background: var(--bg-deep);
+            margin: 0; padding: 0; color: var(--text-main);
             -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
 
+        /* ヘッダーをダークに */
         .header {
-            background: white; padding: 15px 20px;
+            background: rgba(18, 20, 24, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
             display: flex; align-items: center; justify-content: center;
             position: sticky; top: 0; z-index: 10;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        .header-title { font-weight: 900; font-size: 1.2rem; flex-grow: 1; text-align: center; margin-left: 40px; }
-        .plus-btn { color: var(--accent-pink); font-size: 1.8rem; cursor: pointer; border: none; background: none; width: 40px; font-weight: bold; }
+        .header-title { font-weight: 900; font-size: 1.5rem; flex-grow: 1; text-align: center; margin-left: 40px; letter-spacing: -1px; }
+        .plus-btn { color: var(--accent-pink); font-size: 2rem; cursor: pointer; border: none; background: none; width: 40px; font-weight: bold; }
 
         .container { padding: 15px; max-width: 500px; margin: 0 auto; }
 
-        /* 1列スリムリスト */
-        #cardList { display: flex; flex-direction: column; gap: 8px; }
+        /* スリムリストの改良：浮き上がるデザイン */
+        #cardList { display: flex; flex-direction: column; gap: 12px; }
 
         .list-item {
-            height: 70px;
+            height: 75px;
             border-radius: var(--card-radius);
             display: flex; align-items: center;
             position: relative;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            background: var(--card-bg);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
             cursor: pointer;
             overflow: hidden;
-            background: white;
+            transition: transform 0.1s;
         }
+        .list-item:active { transform: scale(0.98); }
 
-        .card-color-strip { width: 12px; height: 100%; flex-shrink: 0; }
-        .card-info { flex-grow: 1; padding-left: 15px; display: flex; flex-direction: column; justify-content: center; }
-        .card-name { font-weight: 800; font-size: 1.05rem; color: #333; }
+        /* 左側のアクセントをグラデーションに */
+        .card-color-strip { 
+            width: 14px; height: 100%; flex-shrink: 0; 
+            filter: brightness(1.1);
+        }
+        
+        .card-info { flex-grow: 1; padding-left: 18px; }
+        .card-name { font-weight: 900; font-size: 1.1rem; color: #1a1a1a; }
 
-        /* 三本線ハンドル */
         .drag-handle {
-            width: 50px; height: 100%;
+            width: 55px; height: 100%;
             display: flex; align-items: center; justify-content: center;
-            color: #ccc; cursor: grab;
+            color: #ddd; cursor: grab;
         }
-        .drag-handle::before {
-            content: '≡'; font-size: 1.5rem;
-        }
+        .drag-handle::before { content: ':::'; font-size: 1.2rem; font-weight: bold; transform: rotate(90deg); }
 
-        /* 詳細ビュー */
+        /* 詳細ビュー：背景を暗くしてカードを強調 */
         #detailView {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color); z-index: 100; flex-direction: column;
+            background: var(--bg-deep); z-index: 100; flex-direction: column;
         }
-        .detail-nav { background: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .detail-nav { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .back-x { font-size: 1.8rem; font-weight: 300; cursor: pointer; color: #888; }
         
         .detail-card-flat {
-            margin: 20px; border-radius: 28px;
-            box-shadow: 0 15px 45px rgba(0,0,0,0.1);
+            margin: auto 25px; border-radius: 30px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
             display: flex; flex-direction: column; overflow: hidden;
         }
         .flat-name-area {
-            height: 160px; display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 2.2rem; font-weight: 900; text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: 180px; display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 2.5rem; font-weight: 900;
         }
         .flat-barcode-area {
             padding: 50px 20px; background: white;
             display: flex; justify-content: center; align-items: center;
         }
-        svg#barcode { width: 100%; height: auto; max-width: 340px; }
+        svg#barcode { width: 100%; height: auto; }
 
-        /* 入力フォーム */
-        .section-content { display: none; background: white; padding: 25px; border-radius: 20px; margin-top: 15px; }
-        input, select { width: 100%; padding: 14px; margin: 8px 0 18px; border: 1px solid #eee; border-radius: 12px; box-sizing: border-box; font-size: 1rem; }
-        .save-btn { background: #111; color: white; border: none; padding: 16px; width: 100%; border-radius: 14px; font-weight: bold; cursor: pointer; }
+        /* 入力フォーム：ダークモード対応 */
+        .section-content { 
+            display: none; background: #1e222a; padding: 30px 25px; 
+            border-radius: 25px; margin-top: 15px; border: 1px solid #333;
+        }
+        input, select { 
+            width: 100%; padding: 16px; margin: 10px 0 20px; 
+            border: none; border-radius: 15px; box-sizing: border-box; 
+            font-size: 1rem; background: #2c313c; color: white;
+        }
+        .save-btn { 
+            background: var(--accent-pink); color: white; border: none; 
+            padding: 18px; width: 100%; border-radius: 15px; font-weight: bold; font-size: 1.1rem;
+        }
         
-        /* 削除ボタン（スリムリスト用） */
-        .delete-btn { width: 40px; color: #eee; font-size: 0.8rem; border: none; background: none; cursor: pointer; }
+        .footer-settings { text-align: center; margin-top: 50px; opacity: 0.4; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="header-title">MyCards.</div>
+        <div class="header-title">MY CARDS</div>
         <button class="plus-btn" id="addToggle">＋</button>
     </div>
 
@@ -102,7 +121,7 @@
         <div id="cardList"></div>
         
         <div id="addArea" class="section-content">
-            <input type="text" id="nameInput" placeholder="カード名 (例: サンドラッグ)">
+            <input type="text" id="nameInput" placeholder="カード名">
             <input type="text" id="cardInput" placeholder="バーコード番号">
             <select id="colorInput">
                 <option value="#1a1a1a">⚫ Black</option>
@@ -113,24 +132,24 @@
                 <option value="#FDD835">🟡 Yellow</option>
                 <option value="#8E24AA">🟣 Purple</option>
             </select>
-            <button class="save-btn" id="saveBtn">保存する</button>
+            <button class="save-btn" id="saveBtn">ADD CARD</button>
         </div>
 
-        <div style="text-align: center; margin-top: 40px;">
-            <button id="settingsToggle" style="background:none; border:none; color:#ccc; font-size:0.7rem; font-weight:bold;">⚙ SETTINGS</button>
+        <div class="footer-settings">
+            <button id="settingsToggle" style="background:none; border:none; color:white; font-size:0.7rem; font-weight:bold; cursor:pointer;">SETTINGS & BACKUP</button>
         </div>
         <div id="backupArea" class="section-content">
-            <button id="exportBtn" style="width:100%; padding:10px; margin-bottom:10px;">書き出し</button>
-            <textarea id="backupText" style="width:100%; height:40px; font-size:10px;" readonly></textarea>
-            <input type="text" id="importInput" placeholder="復元コード貼付" style="margin-top:10px;">
-            <button id="importBtn" style="width:100%; padding:10px; background:#111; color:white; border-radius:10px;">復元</button>
+            <button id="exportBtn" style="width:100%; padding:12px; margin-bottom:12px; background:#2c313c; color:white; border:none; border-radius:10px;">EXPORT DATA</button>
+            <textarea id="backupText" style="width:100%; height:40px; background:#121418; color:#888; border:none; padding:10px; font-size:10px;" readonly></textarea>
+            <input type="text" id="importInput" placeholder="Paste backup code here" style="margin-top:15px;">
+            <button id="importBtn" style="width:100%; padding:12px; background:white; color:black; border:none; border-radius:10px; font-weight:bold;">IMPORT</button>
         </div>
     </div>
 
     <div id="detailView">
         <div class="detail-nav">
-            <div id="backBtn" style="font-size: 1.5rem; cursor:pointer; width:40px; text-align:center;">✕</div>
-            <div id="detailTopTitle" style="font-weight:900;">CARD</div>
+            <div id="backBtn" class="back-x">✕</div>
+            <div id="detailTopTitle" style="font-weight:900; letter-spacing:2px; font-size:0.8rem; color:#666;">DETAIL</div>
             <div style="width:40px;"></div>
         </div>
         <div id="flatCardContainer" class="detail-card-flat">
@@ -139,8 +158,8 @@
                 <svg id="barcode"></svg>
             </div>
         </div>
-        <div style="text-align: center; margin-top: 20px;">
-            <button id="deleteCardBtn" style="color: #ff4444; background: none; border: none; font-size: 0.9rem;">このカードを削除する</button>
+        <div style="text-align: center; margin-top: 40px;">
+            <button id="deleteCardBtn" style="color: #666; background: none; border: none; font-size: 0.8rem; text-decoration: underline;">DELETE THIS CARD</button>
         </div>
     </div>
 
@@ -159,17 +178,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("deleteCardBtn").addEventListener("click", () => deleteCard(currentEditingIndex));
 });
 
-// 並べ替え機能の初期化
 function initSortable() {
-    const el = document.getElementById('cardList');
-    Sortable.create(el, {
-        handle: '.drag-handle',
-        animation: 150,
+    Sortable.create(document.getElementById('cardList'), {
+        handle: '.drag-handle', animation: 200,
         onEnd: () => {
             const newList = [];
-            document.querySelectorAll('.list-item').forEach(item => {
-                newList.push(JSON.parse(item.getAttribute('data-json')));
-            });
+            document.querySelectorAll('.list-item').forEach(item => newList.push(JSON.parse(item.getAttribute('data-json'))));
             saveList(newList);
         }
     });
@@ -185,10 +199,8 @@ function displayList(){
         div.setAttribute('data-json', JSON.stringify(card));
         div.onclick = () => openDetail(index);
         div.innerHTML = `
-            <div class="card-color-strip" style="background:${card.color}"></div>
-            <div class="card-info">
-                <div class="card-name">${card.name}</div>
-            </div>
+            <div class="card-color-strip" style="background:linear-gradient(to bottom, ${card.color}, ${card.color}dd)"></div>
+            <div class="card-info"><div class="card-name">${card.name}</div></div>
             <div class="drag-handle" onclick="event.stopPropagation()"></div>
         `;
         container.appendChild(div);
@@ -199,16 +211,11 @@ function openDetail(index){
     currentEditingIndex = index;
     const card = getList()[index];
     const container = document.getElementById("flatCardContainer");
-    const nameArea = document.getElementById("detailHeaderName");
-    
-    // 究極フラット：背景塗り分け
-    container.style.background = `linear-gradient(to bottom, ${card.color} 0, ${card.color} 160px, #ffffff 160px, #ffffff 100%)`;
-    nameArea.innerText = card.name;
-    document.getElementById("detailTopTitle").innerText = card.name.toUpperCase();
+    container.style.background = `linear-gradient(135deg, ${card.color} 0%, ${card.color}ee 100%)`;
+    document.getElementById("detailHeaderName").innerText = card.name;
     document.getElementById("detailView").style.display = "flex";
-    
     JsBarcode("#barcode", card.num, {
-        format: "CODE128", displayValue: true, width: 2.1, height: 100, fontSize: 20, margin: 0, background: "#ffffff"
+        format: "CODE128", displayValue: true, width: 2.3, height: 110, fontSize: 20, margin: 0, background: "#ffffff"
     });
 }
 
@@ -219,9 +226,7 @@ function addCard(){
     if(name && num){
         const list = getList();
         list.push({name, num, color});
-        saveList(list);
-        displayList();
-        toggleSection();
+        saveList(list); displayList(); toggleSection();
         document.getElementById("nameInput").value = "";
         document.getElementById("cardInput").value = "";
     }
@@ -236,10 +241,8 @@ function toggleSection(id){
 
 function deleteCard(index){
     if(confirm("カードを削除しますか？")){
-        const list = getList();
-        list.splice(index, 1);
-        saveList(list);
-        displayList();
+        const list = getList(); list.splice(index, 1);
+        saveList(list); displayList();
         document.getElementById("detailView").style.display = "none";
     }
 }
