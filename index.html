@@ -1,71 +1,322 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>MyCards.</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MyCards.</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-512.png">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-<meta http-equiv="Content-Security-Policy"
-content="
-default-src 'self';
-script-src 'self';
-style-src 'self' 'unsafe-inline';
-img-src 'self' data:;
-object-src 'none';
-base-uri 'self';
-frame-ancestors 'none';
-">
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-512.png">
-<meta name="theme-color" content="#ffffff">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <style>
+        :root {
+            --bg-color: #f1f3f5;
+            --card-bg: #ffffff;
+            --text-main: #111111;
+            --text-sub: #888888;
+            --accent-color: #888;
+            --btn-blue: #0077c2;
+        }
 
-<script src="js/JsBarcode.all.min.js" defer></script>
-<script src="js/app.js" defer></script>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            margin: 0;
+            padding: 20px 15px 120px;
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
 
-<style>
-/* ★ あなたのCSSはそのまま（変更なし） */
-/* （ここに今使っているCSS全文をそのまま貼る） */
-</style>
+        .container { max-width: 450px; margin: 0 auto; text-align: left; }
+
+        /* ヘッダー */
+        h2 { font-size: 2.8rem; font-weight: 900; letter-spacing: -1.5px; margin: 10px 0 0; }
+        .accent-char { color: var(--accent-color); transition: color .5s ease; }
+        .sub-label { font-size: 0.8rem; color: var(--text-sub); font-weight: bold; margin-bottom: 30px; display: block; }
+
+        /* IDラベル */
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #444;
+            margin: 25px 0 10px 5px;
+            text-transform: uppercase;
+        }
+
+        /* カードリスト */
+        #cardList { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .list-item {
+            background: var(--card-bg);
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: transform 0.1s;
+        }
+        .color-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .list-item-name { font-weight: 600; font-size: 1rem; flex-grow: 1; text-align: left; }
+        
+        .delete-btn-mini {
+            background: #f8f9fa; border: none; color: #cc0000;
+            padding: 5px 8px; border-radius: 6px; font-size: 0.65rem;
+            margin-right: 8px; font-weight: bold; cursor: pointer;
+        }
+
+        .sort-btns { display: flex; flex-direction: column; gap: 2px; }
+        .sort-btn { background: none; border: none; color: #ccc; font-size: 8px; padding: 2px; cursor: pointer; }
+
+        /* 入力エリア */
+        .section-content { display: none; background: #e9ecef; padding: 20px; border-radius: 16px; margin-top: 10px; }
+        input, select, textarea {
+            width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px;
+            border: none; font-size: 0.95rem; box-sizing: border-box;
+            background: #ffffff; outline: none;
+        }
+
+        /* 切り替えリンク */
+        .toggle-link {
+            display: block; padding: 15px; margin-top: 20px;
+            background: #ffffff; border-radius: 10px;
+            color: #333; font-size: 0.8rem; font-weight: 800;
+            cursor: pointer; text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* ボタン */
+        .main-btn {
+            background: #111; color: white; border: none;
+            width: 100%; border-radius: 30px; font-weight: bold;
+            font-size: 0.9rem; display: flex;
+            justify-content: space-between; align-items: center;
+            padding: 14px 25px; cursor: pointer; margin-top: 10px;
+        }
+        .main-btn::after { content: '〉'; font-size: 0.8rem; opacity: 0.5; }
+
+        .blue-btn { background: var(--btn-blue); margin-top: auto; margin-bottom: 50px; width: 85%; }
+
+        /* 詳細画面 */
+        #detailView {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: var(--bg-color);
+            z-index: 100; flex-direction: column; align-items: center;
+        }
+        #detailHeader {
+            width: 100%; height: 35%; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; color: white;
+            padding-bottom: 40px; box-sizing: border-box;
+        }
+        #detailTitle { font-size: 2.2rem; font-weight: 800; margin-top: 20px; }
+        
+        .barcode-box {
+            background: white; padding: 40px 20px; border-radius: 20px;
+            width: 85%; margin-top: -60px; box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        svg#barcode { width: 100%; height: auto; max-width: 320px; }
+    </style>
 </head>
 <body>
 
 <div class="container">
-<h2 id="appTitle">MyC<span class="accent-char">a</span>rds.</h2>
-<div id="cardList"></div>
+    <h2 id="appTitle">MyC<span class="accent-char">a</span>rds.</h2>
+    <span class="sub-label">accent-char #888</span>
 
-<div class="toggle-link" id="addToggle">＋ ADD NEW CARD</div>
-<div id="addArea" class="section-content">
-<input type="text" id="nameInput" placeholder="カード名">
-<input type="tel" id="cardInput" placeholder="バーコード番号 (13桁)">
-<select id="colorInput">
-<option value="#1a1a1a">⚫ Black</option>
-<option value="#E53935">🔴 Red</option>
-<option value="#1E88E5">🔵 Blue</option>
-<option value="#FB8C00">🟠 Orange</option>
-<option value="#43A047">🟢 Green</option>
-<option value="#FDD835">🟡 Yellow</option>
-<option value="#8E24AA">🟣 Purple</option>
-</select>
-<button class="add-btn" id="saveBtn">リストに追加</button>
-</div>
+    <div class="section-label">ID cardList</div>
+    <div id="cardList"></div>
 
-<div class="toggle-link" id="settingsToggle">⚙ SETTINGS</div>
-<div id="backupArea" class="section-content">
-<button id="exportBtn" style="width:100%; padding:12px; background:#f5f5f5; border:none; border-radius:12px; font-weight:bold; color:#666;">データを書き出す</button>
-<textarea id="backupText" rows="2" style="margin-top:10px; font-size:10px; color:#999;" readonly></textarea>
-<input type="text" id="importInput" placeholder="復元コードを貼付" style="margin-top:20px;">
-<button id="importBtn" style="width:100%; padding:12px; background:#111; color:white; border:none; border-radius:12px; font-weight:bold;">データを復元</button>
-</div>
+    <div class="section-label">ID ADD NEW CARD</div>
+    <div class="toggle-link" id="addToggle">＋ ADD NEW CARD</div>
+    <div id="addArea" class="section-content">
+        <input type="text" id="nameInput" placeholder="カード名">
+        <input type="tel" id="cardInput" placeholder="バーコード番号 (13桁)">
+        <select id="colorInput">
+            <option value="#1a1a1a">⚫ Black</option>
+            <option value="#E53935">🔴 Red</option>
+            <option value="#1E88E5">🔵 Blue</option>
+            <option value="#FB8C00">🟠 Orange</option>
+            <option value="#43A047">🟢 Green</option>
+            <option value="#FDD835">🟡 Yellow</option>
+            <option value="#8E24AA">🟣 Purple</option>
+        </select>
+        <button class="main-btn" id="saveBtn">Add-btn</button>
+    </div>
+
+    <div class="section-label">ID SETTINGS</div>
+    <div class="toggle-link" id="settingsToggle">⚙ SETTINGS</div>
+    <div id="backupArea" class="section-content">
+        <button id="exportBtn" style="width:100%; padding:12px; background:#fff; border:none; border-radius:10px; font-weight:bold; color:#666;">データを書き出す</button>
+        <textarea id="backupText" rows="2" style="margin-top:10px; font-size:10px; color:#999;" readonly></textarea>
+        <input type="text" id="importInput" placeholder="復元コードを貼付" style="margin-top:20px;">
+        <button id="importBtn" style="width:100%; padding:12px; background:#111; color:white; border:none; border-radius:10px; font-weight:bold;">データを復元</button>
+    </div>
 </div>
 
 <div id="detailView">
-<div id="detailHeader"><div id="detailTitle"></div></div>
-<div class="barcode-box"><svg id="barcode"></svg></div>
-<button class="back-btn" id="backBtn">DONE</button>
+    <div id="detailHeader">
+        <div class="section-label" style="color:rgba(255,255,255,0.7); margin:0;">ID detail view</div>
+        <div id="detailTitle"></div>
+    </div>
+    <div class="barcode-box">
+        <div class="section-label" style="margin:0 0 20px 0; align-self: flex-start;">detail Title</div>
+        <svg id="barcode"></svg>
+    </div>
+    <button class="main-btn blue-btn" id="backBtn">Back-btn</button>
 </div>
 
+<script>
+/** * 提供されたJavaScriptロジック（そのまま維持）
+ */
+document.addEventListener("DOMContentLoaded", () => {
+    displayList();
+    document.getElementById("addToggle").addEventListener("click", () => toggleSection("addArea"));
+    document.getElementById("settingsToggle").addEventListener("click", () => toggleSection("backupArea"));
+    document.getElementById("saveBtn").addEventListener("click", addCard);
+    document.getElementById("exportBtn").addEventListener("click", exportData);
+    document.getElementById("importBtn").addEventListener("click", importData);
+    document.getElementById("backBtn").addEventListener("click", closeDetail);
+    document.getElementById("colorInput").addEventListener("change", (e)=>updatePreviewColor(e.target.value));
+});
+
+function updatePreviewColor(color){
+    document.getElementById("saveBtn").style.backgroundColor=color;
+    document.documentElement.style.setProperty("--accent-color",color);
+}
+
+function displayList(){
+    const list=getList();
+    const container=document.getElementById("cardList");
+    container.innerHTML="";
+    if(list.length===0){
+        const p=document.createElement("p");
+        p.style.color="#999";
+        p.style.padding="40px";
+        p.style.textAlign="center";
+        p.style.fontSize="0.8rem";
+        p.textContent="カードがありません";
+        container.appendChild(p);
+        return;
+    }
+    document.documentElement.style.setProperty("--accent-color",list[list.length-1].color);
+
+    list.forEach((card,index)=>{
+        const div=document.createElement("div");
+        div.className="list-item";
+        
+        // 画像UIに合わせたドットの追加
+        const dot = document.createElement("div");
+        dot.className = "color-dot";
+        dot.style.backgroundColor = card.color;
+
+        const nameDiv=document.createElement("div");
+        nameDiv.className="list-item-name";
+        nameDiv.style.flexGrow="1";
+        nameDiv.style.textAlign="left";
+        nameDiv.textContent=card.name;
+        nameDiv.addEventListener("click",()=>openDetail(index));
+
+        const del=document.createElement("button");
+        del.className="delete-btn-mini";
+        del.textContent="削除";
+        del.addEventListener("click",(e)=>{ e.stopPropagation(); deleteCard(index); });
+
+        const sortBox=document.createElement("div");
+        sortBox.className="sort-btns";
+        const up=document.createElement("button");
+        up.className="sort-btn";
+        up.textContent="▲";
+        up.addEventListener("click",(e)=>{ e.stopPropagation(); moveCard(index,-1); });
+        const down=document.createElement("button");
+        down.className="sort-btn";
+        down.textContent="▼";
+        down.addEventListener("click",(e)=>{ e.stopPropagation(); moveCard(index,1); });
+
+        sortBox.append(up,down);
+        div.append(dot,nameDiv,del,sortBox); // dotを追加
+        container.appendChild(div);
+    });
+}
+
+function addCard(){
+    const name=document.getElementById("nameInput").value;
+    const num=document.getElementById("cardInput").value.replace(/\s+/g,"");
+    const color=document.getElementById("colorInput").value;
+    if(name&&num){
+        const list=getList();
+        list.push({name,num,color});
+        saveList(list);
+        displayList();
+        toggleSection();
+        // フォームクリア追加（利便性のため）
+        document.getElementById("nameInput").value = "";
+        document.getElementById("cardInput").value = "";
+    }
+}
+
+function moveCard(index,d){
+    const list=getList();
+    const n=index+d;
+    if(n>=0&&n<list.length){
+        [list[index],list[n]]=[list[n],list[index]];
+        saveList(list);
+        displayList();
+    }
+}
+
+function openDetail(index){
+    const card=getList()[index];
+    document.getElementById("detailHeader").style.backgroundColor=card.color;
+    document.getElementById("detailTitle").innerText=card.name;
+    document.getElementById("detailView").style.display="flex";
+    const format=(card.num.length===13&&/^\d+$/.test(card.num))?"EAN13":"CODE128";
+    JsBarcode("#barcode",card.num,{format,displayValue:true,width:2.2,height:100,fontSize:26,textMargin:12,margin:25,background:"#ffffff"});
+}
+
+function closeDetail(){
+    document.getElementById("detailView").style.display="none";
+}
+
+function toggleSection(id){
+    document.getElementById("addArea").style.display="none";
+    document.getElementById("backupArea").style.display="none";
+    if(id)document.getElementById(id).style.display="block";
+}
+
+function deleteCard(index){
+    if(confirm("削除しますか？")){
+        const list=getList();
+        list.splice(index,1);
+        saveList(list);
+        displayList();
+    }
+}
+
+function getList(){return JSON.parse(localStorage.getItem("cardList")||"[]");}
+function saveList(list){localStorage.setItem("cardList",JSON.stringify(list));}
+function exportData(){document.getElementById("backupText").value=localStorage.getItem("cardList");}
+
+function importData(){
+    try{
+        const code=document.getElementById("importInput").value;
+        if(!code)return;
+        const parsed=JSON.parse(code);
+        if(!Array.isArray(parsed))throw new Error();
+        saveList(parsed);
+        displayList();
+    }catch{alert("無効なコードです");}
+}
+</script>
 </body>
 </html>
