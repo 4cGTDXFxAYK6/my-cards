@@ -15,7 +15,7 @@
     <style>
         :root {
             --bg-color: #f2f4f6;
-            --card-radius: 20px;
+            --card-radius: 22px;
             --accent-pink: #e91e63;
         }
 
@@ -28,7 +28,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* ヘッダー：完全センター */
+        /* ヘッダー：タイトルを完全中央寄せ */
         .header {
             background: white;
             padding: 15px 20px;
@@ -43,6 +43,7 @@
         .header-title { 
             font-weight: 900; 
             font-size: 1.4rem; 
+            letter-spacing: -0.5px;
             flex-grow: 1;
             text-align: center;
             margin-left: 40px;
@@ -59,7 +60,7 @@
 
         .container { padding: 20px 15px; max-width: 500px; margin: 0 auto; }
 
-        /* グリッドレイアウト */
+        /* 2列グリッド */
         #cardList {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -75,7 +76,7 @@
             justify-content: center;
             position: relative;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             transition: transform 0.1s ease;
         }
         .list-item:active { transform: scale(0.96); }
@@ -86,6 +87,7 @@
             font-size: 1.1rem;
             text-align: center;
             padding: 10px;
+            line-height: 1.2;
         }
 
         .delete-btn-mini {
@@ -104,7 +106,7 @@
             justify-content: center;
         }
 
-        /* 詳細画面：フラットデザインへの修正 */
+        /* 詳細画面 */
         #detailView {
             display: none;
             position: fixed;
@@ -119,53 +121,45 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            font-weight: bold;
         }
-        .detail-top-title { font-weight: 900; letter-spacing: 0.5px; }
 
-        /* バーコードがはみ出さない一体型の白い箱 */
-        .detail-card-container {
+        /* フラット化されたカードエリア */
+        .detail-card-area {
             background: white;
             margin: 20px;
             border-radius: 28px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            overflow: hidden; /* 中身の角を親に合わせる */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
             display: flex;
             flex-direction: column;
         }
-        
-        /* 上部の色付きエリア */
-        .card-visual-top {
-            height: 120px;
+        .card-visual {
+            height: 160px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 1.8rem;
+            font-size: 2rem;
             font-weight: 900;
+            /* 下側の角丸をなくしてバーコードと合体 */
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
         }
-
-        /* バーコードエリア（フラットに接続） */
-        .barcode-area-bottom {
-            padding: 30px 20px 40px;
+        .barcode-display {
+            padding: 40px 20px;
             background: white;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
         }
-        .barcode-label {
-            align-self: flex-start;
-            font-size: 0.7rem;
-            font-weight: bold;
-            color: #ccc;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-        }
-        svg#barcode { width: 100%; height: auto; max-width: 300px; }
+        #barcode { width: 100%; height: auto; max-width: 300px; }
 
-        /* フォーム類 */
+        /* 設定・追加エリア */
         .section-content { display: none; background: white; padding: 25px; border-radius: 20px; margin-top: 15px; }
-        label { font-size: 0.7rem; font-weight: bold; color: #999; }
-        input, select { width: 100%; padding: 14px; margin: 5px 0 20px; border: 1px solid #f0f0f0; border-radius: 12px; box-sizing: border-box; background: #fafafa; outline: none; }
+        label { font-size: 0.7rem; font-weight: bold; color: #999; margin-left: 5px; }
+        input, select { width: 100%; padding: 14px; margin: 5px 0 20px; border: 1px solid #f0f0f0; border-radius: 12px; box-sizing: border-box; background: #fafafa; font-size: 1rem; outline: none; }
         .save-btn { background: #111; color: white; border: none; padding: 16px; width: 100%; border-radius: 14px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
@@ -183,7 +177,7 @@
             <label>CARD NAME</label>
             <input type="text" id="nameInput" placeholder="例: mandai">
             <label>NUMBER</label>
-            <input type="tel" id="cardInput" placeholder="番号を入力">
+            <input type="tel" id="cardInput" placeholder="バーコード番号">
             <label>COLOR</label>
             <select id="colorInput">
                 <option value="#34b4eb">Light Blue (mandai)</option>
@@ -191,32 +185,31 @@
                 <option value="#f9c11c">Yellow (Hinatas)</option>
                 <option value="#005bac">Blue (YAMADA)</option>
                 <option value="#1a1a1a">Black</option>
+                <option value="#43A047">Green</option>
             </select>
             <button class="save-btn" id="saveBtn">保存する</button>
         </div>
 
         <div style="text-align: center; margin-top: 60px;">
-            <button id="settingsToggle" style="background:none; border:none; color:#bbb; font-size:0.7rem; font-weight:bold;">⚙ DATA SETTINGS</button>
+            <button id="settingsToggle" style="background:none; border:none; color:#bbb; font-size:0.7rem; font-weight:bold; cursor:pointer;">⚙ DATA SETTINGS</button>
         </div>
         <div id="backupArea" class="section-content">
-            <button id="exportBtn" style="width:100%; padding:10px; margin-bottom:10px;">書き出し</button>
-            <textarea id="backupText" style="width:100%; height:50px; font-size:10px;" readonly></textarea>
-            <input type="text" id="importInput" placeholder="コードを貼付" style="margin-top:10px;">
-            <button id="importBtn" style="width:100%; padding:10px; background:#111; color:white; border-radius:10px; border:none;">復元</button>
+            <button id="exportBtn" style="width:100%; padding:12px; margin-bottom:10px; border-radius:10px; border:1px solid #eee; background:white;">データを書き出す</button>
+            <textarea id="backupText" style="font-size:10px; height:60px; width:100%; border:1px solid #eee; padding:5px; border-radius:8px;" readonly></textarea>
+            <input type="text" id="importInput" placeholder="復元コードを貼付" style="margin-top:15px; margin-bottom:10px;">
+            <button id="importBtn" style="width:100%; padding:12px; background:#111; color:white; border:none; border-radius:10px; font-weight:bold;">データを復元</button>
         </div>
     </div>
 
     <div id="detailView">
         <div class="detail-nav">
-            <div id="backBtn" style="font-size: 1.5rem; cursor:pointer; width:40px;">✕</div>
-            <div id="detailTopTitle" class="detail-top-title">DETAIL</div>
+            <div id="backBtn" style="font-size: 1.5rem; cursor:pointer; padding: 0 10px;">✕</div>
+            <div id="detailTopTitle" style="font-weight:900;">CARD</div>
             <div style="width:40px;"></div>
         </div>
-        
-        <div class="detail-card-container">
-            <div id="detailHeader" class="card-visual-top"></div>
-            <div class="barcode-area-bottom">
-                <div class="barcode-label">Barcode</div>
+        <div class="detail-card-area">
+            <div id="detailHeader" class="card-visual"></div>
+            <div class="barcode-display">
                 <svg id="barcode"></svg>
             </div>
         </div>
@@ -237,6 +230,7 @@ function displayList(){
     const list = getList();
     const container = document.getElementById("cardList");
     container.innerHTML = "";
+    
     if(list.length === 0){
         container.style.display = "block";
         container.innerHTML = '<p style="color:#bbb; text-align:center; padding:100px 0;">カードがありません</p>';
@@ -244,18 +238,22 @@ function displayList(){
     } else {
         container.style.display = "grid";
     }
+    
     list.forEach((card, index) => {
         const div = document.createElement("div");
         div.className = "list-item";
         div.style.backgroundColor = card.color;
         div.onclick = () => openDetail(index);
+
         const nameDiv = document.createElement("div");
         nameDiv.className = "list-item-name";
         nameDiv.textContent = card.name;
+
         const del = document.createElement("button");
         del.className = "delete-btn-mini";
         del.innerHTML = "✕";
         del.onclick = (e) => { e.stopPropagation(); deleteCard(index); };
+
         div.append(nameDiv, del);
         container.appendChild(div);
     });
@@ -282,19 +280,23 @@ function openDetail(index){
     document.getElementById("detailHeader").innerText = card.name;
     document.getElementById("detailTopTitle").innerText = card.name.toUpperCase();
     document.getElementById("detailView").style.display = "flex";
+    
     const format = (card.num.length === 13 && /^\d+$/.test(card.num)) ? "EAN13" : "CODE128";
+    
     JsBarcode("#barcode", card.num, {
         format: format,
         displayValue: true,
         width: 2.2,
-        height: 110,
-        fontSize: 20,
-        margin: 0, // マージンを削ってフラット化
+        height: 100,
+        fontSize: 22,
+        margin: 0, // マージンを0にしてフラット化を強調
         background: "#ffffff"
     });
 }
 
-function closeDetail(){ document.getElementById("detailView").style.display = "none"; }
+function closeDetail(){ 
+    document.getElementById("detailView").style.display = "none"; 
+}
 
 function toggleSection(id){
     const add = document.getElementById("addArea");
@@ -312,7 +314,7 @@ function toggleSection(id){
 }
 
 function deleteCard(index){
-    if(confirm("削除しますか？")){
+    if(confirm("カードを削除しますか？")){
         const list = getList();
         list.splice(index, 1);
         saveList(list);
@@ -327,8 +329,8 @@ function importData(){
     try {
         const code = document.getElementById("importInput").value;
         const parsed = JSON.parse(code);
-        if(Array.isArray(parsed)) { saveList(parsed); displayList(); alert("完了"); }
-    } catch { alert("失敗"); }
+        if(Array.isArray(parsed)) { saveList(parsed); displayList(); alert("復元成功"); }
+    } catch { alert("エラー"); }
 }
 </script>
 </body>
