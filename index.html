@@ -21,7 +21,7 @@
             user-select: none;
         }
 
-        /* ヘッダー：白ベース */
+        /* ヘッダー */
         .header {
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(10px);
@@ -40,7 +40,7 @@
 
         .container { padding: 20px 15px; max-width: 500px; margin: 0 auto; }
 
-        /* カードリスト：フルカラーデザイン */
+        /* リスト */
         #cardList { display: flex; flex-direction: column; gap: 12px; }
         .list-item {
             height: 75px;
@@ -50,7 +50,6 @@
             cursor: pointer;
             overflow: hidden;
             transition: transform 0.1s;
-            border: none;
         }
         .list-item:active { transform: scale(0.97); }
 
@@ -77,7 +76,7 @@
         .close-circle svg { width: 24px; height: 24px; stroke: #333; stroke-width: 3; }
         #detailTopTitle { font-weight: 800; font-size: 1rem; color: #888; letter-spacing: 1px; }
         
-        /* 詳細カード：フラット塗り分け */
+        /* 詳細カード：サイズ調整 */
         .detail-card-flat {
             margin: auto 20px; border-radius: 35px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.15);
@@ -85,13 +84,22 @@
             background: white;
         }
         .flat-name-area {
-            height: 190px; display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 2.8rem; font-weight: 900;
+            height: 160px; display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 2.5rem; font-weight: 900;
         }
-        .flat-barcode-area { padding: 60px 20px; background: white; display: flex; justify-content: center; align-items: center; }
-        svg#barcode { width: 100%; height: auto; }
+        /* バーコードエリアに左右の余白を強制 */
+        .flat-barcode-area { 
+            padding: 40px 30px 50px; 
+            background: white; 
+            display: flex; justify-content: center; align-items: center; 
+        }
+        svg#barcode { 
+            width: 100% !important; 
+            height: auto; 
+            max-width: 280px; /* 横幅を少し抑えて読み取りやすく */
+        }
 
-        /* 入力フォーム：ホワイトモード */
+        /* フォーム */
         .section-content { display: none; background: white; padding: 30px; border-radius: 25px; margin-top: 15px; border: 1px solid #eee; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         input, select { 
             width: 100%; padding: 18px; margin: 10px 0 20px; border: 1px solid #eee; border-radius: 15px; 
@@ -197,7 +205,7 @@ function displayList(){
     list.forEach((card, index) => {
         const div = document.createElement("div");
         div.className = "list-item";
-        div.style.backgroundColor = card.color; // 背景をフルカラーに
+        div.style.backgroundColor = card.color;
         div.setAttribute('data-json', JSON.stringify(card));
         div.onclick = () => openDetail(index);
         div.innerHTML = `
@@ -217,8 +225,16 @@ function openDetail(index){
     document.getElementById("detailHeaderName").innerText = card.name;
     document.getElementById("detailTopTitle").innerText = card.name;
     document.getElementById("detailView").style.display = "flex";
+    
+    // バーコード生成設定を読み取りやすく調整
     JsBarcode("#barcode", card.num, {
-        format: "CODE128", displayValue: true, width: 2.3, height: 110, fontSize: 18, margin: 0, background: "#ffffff"
+        format: "CODE128",
+        displayValue: true,
+        width: 1.8,        // 棒の太さを少し細くして全体を縮小
+        height: 85,        // 高さもバランス良く調整
+        fontSize: 18,
+        margin: 10,        // バーコード自体の余白を確保
+        background: "#ffffff"
     });
 }
 
