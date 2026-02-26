@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MyCards. Noir</title>
+    <title>MyCards.</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -23,6 +23,7 @@
             user-select: none;
         }
 
+        /* ヘッダー */
         .header {
             background: rgba(18, 20, 24, 0.9);
             backdrop-filter: blur(15px);
@@ -30,13 +31,19 @@
             display: flex; align-items: center; justify-content: center;
             position: sticky; top: 0; z-index: 10;
         }
-        .header-title { font-weight: 900; font-size: 1.6rem; flex-grow: 1; text-align: center; margin-left: 40px; letter-spacing: -1px; }
+        
+        /* ロゴスタイリング：aのみ動的カラー */
+        .header-title { 
+            font-weight: 900; font-size: 1.6rem; flex-grow: 1; text-align: center; margin-left: 40px; letter-spacing: -1px; 
+        }
+        #logo-a { transition: color 0.5s ease; }
+
         .plus-btn { color: var(--accent-pink); font-size: 2.2rem; cursor: pointer; border: none; background: none; width: 40px; font-weight: bold; }
 
         .container { padding: 15px; max-width: 500px; margin: 0 auto; }
 
+        /* リスト */
         #cardList { display: flex; flex-direction: column; gap: 14px; }
-
         .list-item {
             height: 80px;
             border-radius: var(--card-radius);
@@ -45,7 +52,9 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.4);
             cursor: pointer;
             overflow: hidden;
+            transition: transform 0.1s;
         }
+        .list-item:active { transform: scale(0.98); }
 
         .card-color-strip { width: 16px; height: 100%; flex-shrink: 0; }
         .card-info { flex-grow: 1; padding-left: 20px; }
@@ -58,35 +67,18 @@
         }
         .drag-handle::before { content: '≡'; font-size: 1.8rem; }
 
-        /* --- 詳細ビュー：改善版 --- */
+        /* 詳細ビュー */
         #detailView {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-deep); z-index: 100; flex-direction: column;
         }
-
-        .detail-nav { 
-            padding: 15px 20px; 
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255,255,255,0.03);
-        }
-
-        /* 閉じるボタンの強化 */
+        .detail-nav { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); }
         .close-circle {
-            width: 44px; height: 44px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
-            transition: background 0.2s;
+            width: 44px; height: 44px; background: rgba(255,255,255,0.15); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
-        .close-circle:active { background: rgba(255,255,255,0.3); }
         .close-circle svg { width: 24px; height: 24px; stroke: white; stroke-width: 3; }
-
-        /* ヘッダーの文字をカード名に */
-        #detailTopTitle { 
-            font-weight: 800; font-size: 1rem; color: #eee; 
-            letter-spacing: 1px; text-transform: uppercase;
-        }
+        #detailTopTitle { font-weight: 800; font-size: 1rem; color: #eee; letter-spacing: 1px; }
         
         .detail-card-flat {
             margin: auto 20px; border-radius: 35px;
@@ -97,40 +89,28 @@
             height: 190px; display: flex; align-items: center; justify-content: center;
             color: white; font-size: 2.8rem; font-weight: 900;
         }
-        .flat-barcode-area {
-            padding: 60px 20px; background: white;
-            display: flex; justify-content: center; align-items: center;
-        }
+        .flat-barcode-area { padding: 60px 20px; background: white; display: flex; justify-content: center; align-items: center; }
         svg#barcode { width: 100%; height: auto; }
 
-        /* フォーム系 */
-        .section-content { 
-            display: none; background: #1e222a; padding: 30px; 
-            border-radius: 25px; margin-top: 15px; border: 1px solid #333;
-        }
+        /* フォーム */
+        .section-content { display: none; background: #1e222a; padding: 30px; border-radius: 25px; margin-top: 15px; border: 1px solid #333; }
         input, select { 
-            width: 100%; padding: 18px; margin: 10px 0 20px; 
-            border: none; border-radius: 15px; box-sizing: border-box; 
-            font-size: 1.1rem; background: #2c313c; color: white;
+            width: 100%; padding: 18px; margin: 10px 0 20px; border: none; border-radius: 15px; 
+            box-sizing: border-box; font-size: 1.1rem; background: #2c313c; color: white;
         }
-        .save-btn { 
-            background: var(--accent-pink); color: white; border: none; 
-            padding: 20px; width: 100%; border-radius: 18px; font-weight: bold; font-size: 1.2rem;
-        }
-        
-        .delete-link { color: #555; background: none; border: none; font-size: 0.8rem; text-decoration: underline; margin-top: 30px; margin-bottom: 20px;}
+        .save-btn { background: var(--accent-pink); color: white; border: none; padding: 20px; width: 100%; border-radius: 18px; font-weight: bold; font-size: 1.2rem; }
+        .delete-link { color: #555; background: none; border: none; font-size: 0.8rem; text-decoration: underline; margin-top: 30px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="header-title">MY CARDS</div>
+        <div class="header-title">MyC<span id="logo-a">a</span>rds.</div>
         <button class="plus-btn" id="addToggle">＋</button>
     </div>
 
     <div class="container">
         <div id="cardList"></div>
-        
         <div id="addArea" class="section-content">
             <input type="text" id="nameInput" placeholder="カード名">
             <input type="text" id="cardInput" placeholder="バーコード番号">
@@ -150,10 +130,10 @@
             <button id="settingsToggle" style="background:none; border:none; color:white; font-size:0.7rem; font-weight:bold;">SETTINGS</button>
         </div>
         <div id="backupArea" class="section-content">
-            <button id="exportBtn" style="width:100%; padding:12px; background:#2c313c; color:white; border:none; border-radius:10px;">書き出し</button>
+            <button id="exportBtn" style="width:100%; padding:12px; background:#2c313c; color:white; border:none; border-radius:10px;">EXPORT</button>
             <textarea id="backupText" style="width:100%; height:40px; background:#121418; color:#888; border:none; padding:10px; font-size:10px; margin-top:10px;" readonly></textarea>
-            <input type="text" id="importInput" placeholder="復元コードを貼付" style="margin-top:15px;">
-            <button id="importBtn" style="width:100%; padding:12px; background:white; color:black; border:none; border-radius:10px; font-weight:bold;">復元実行</button>
+            <input type="text" id="importInput" placeholder="Paste backup code" style="margin-top:15px;">
+            <button id="importBtn" style="width:100%; padding:12px; background:white; color:black; border:none; border-radius:10px; font-weight:bold;">IMPORT</button>
         </div>
     </div>
 
@@ -198,8 +178,21 @@ function initSortable() {
             const newList = [];
             document.querySelectorAll('.list-item').forEach(item => newList.push(JSON.parse(item.getAttribute('data-json'))));
             saveList(newList);
+            updateLogoColor(); // 並べ替え後もロゴ色を更新
         }
     });
+}
+
+// ロゴの「a」の色を一番下のカードの色に更新する
+function updateLogoColor() {
+    const list = getList();
+    const logoA = document.getElementById("logo-a");
+    if (list.length > 0) {
+        const lastCardColor = list[list.length - 1].color;
+        logoA.style.color = lastCardColor;
+    } else {
+        logoA.style.color = "inherit"; // カードがない時はデフォルト
+    }
 }
 
 function displayList(){
@@ -218,18 +211,17 @@ function displayList(){
         `;
         container.appendChild(div);
     });
+    updateLogoColor(); // リスト表示時にロゴ色を反映
 }
 
 function openDetail(index){
     currentEditingIndex = index;
     const card = getList()[index];
     const container = document.getElementById("flatCardContainer");
-    
     container.style.background = `linear-gradient(145deg, ${card.color} 0%, ${card.color}cc 100%)`;
     document.getElementById("detailHeaderName").innerText = card.name;
-    document.getElementById("detailTopTitle").innerText = card.name; // ヘッダーもカード名に
+    document.getElementById("detailTopTitle").innerText = card.name;
     document.getElementById("detailView").style.display = "flex";
-    
     JsBarcode("#barcode", card.num, {
         format: "CODE128", displayValue: true, width: 2.3, height: 110, fontSize: 18, margin: 0, background: "#ffffff"
     });
@@ -256,7 +248,7 @@ function toggleSection(id){
 }
 
 function deleteCard(index){
-    if(confirm("このカードを削除してもよろしいですか？")){
+    if(confirm("削除しますか？")){
         const list = getList(); list.splice(index, 1);
         saveList(list); displayList();
         document.getElementById("detailView").style.display = "none";
@@ -269,8 +261,8 @@ function exportData(){ document.getElementById("backupText").value = localStorag
 function importData(){
     try {
         const parsed = JSON.parse(document.getElementById("importInput").value);
-        if(Array.isArray(parsed)) { saveList(parsed); displayList(); alert("データを復元しました"); }
-    } catch { alert("復元コードが正しくありません"); }
+        if(Array.isArray(parsed)) { saveList(parsed); displayList(); alert("完了"); }
+    } catch { alert("エラー"); }
 }
 </script>
 </body>
