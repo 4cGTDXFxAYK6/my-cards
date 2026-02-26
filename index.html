@@ -21,6 +21,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* ヘッダー */
         .header {
             background: white;
             padding: 15px 20px;
@@ -40,6 +41,7 @@
 
         .container { padding: 20px 15px; max-width: 500px; margin: 0 auto; }
 
+        /* リストのグリッド表示 */
         #cardList {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -55,33 +57,36 @@
             position: relative;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             cursor: pointer;
+            overflow: hidden;
         }
 
-        .list-item-name { color: white; font-weight: 800; font-size: 1.1rem; text-align: center; padding: 10px; }
+        .list-item-name { color: white; font-weight: 800; font-size: 1.1rem; text-align: center; padding: 10px; pointer-events: none; }
 
         .delete-btn-mini {
             position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.25);
-            border: none; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 10px;
+            border: none; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 10px; cursor: pointer;
         }
 
-        /* 詳細画面：フラット化の核心 */
+        /* 詳細画面：完全フラット化の設計 */
         #detailView {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-color); z-index: 100; flex-direction: column;
         }
         .detail-nav { background: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
 
-        .detail-card-area {
+        /* これが「一枚の白いカード」 */
+        .detail-card-base {
             background: white;
             margin: 20px;
             border-radius: 28px;
-            overflow: hidden; /* これで内部の角丸を強制フラット化 */
+            overflow: hidden; /* 中の色付きエリアをここで丸くカットする */
             display: flex;
             flex-direction: column;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
         }
 
-        .card-visual {
+        /* カードの上半分（色付き） */
+        .detail-header-color {
             height: 160px;
             display: flex;
             align-items: center;
@@ -89,26 +94,26 @@
             color: white;
             font-size: 2rem;
             font-weight: 900;
-            /* 下の角丸を0にして完全に直角で接続 */
-            border-bottom-left-radius: 0 !important;
-            border-bottom-right-radius: 0 !important;
+            margin: 0; /* 隙間を排除 */
+            border: none;
         }
 
-        .barcode-display {
-            padding: 40px 10px; /* 左右の余白を詰め、上下を確保 */
+        /* カードの下半分（バーコード） */
+        .detail-barcode-area {
+            padding: 40px 20px;
             background: white;
             display: flex;
             justify-content: center;
             align-items: center;
+            margin: 0; /* 隙間を排除 */
         }
 
-        /* バーコード自体がはみ出ないように幅を固定 */
-        #barcode { width: 90%; height: auto; display: block; }
+        #barcode { width: 100%; height: auto; display: block; }
 
-        /* 設定エリア */
+        /* 設定・入力フォーム */
         .section-content { display: none; background: white; padding: 25px; border-radius: 20px; margin-top: 15px; }
-        input, select { width: 100%; padding: 14px; margin: 5px 0 20px; border: 1px solid #f0f0f0; border-radius: 12px; box-sizing: border-box; }
-        .save-btn { background: #111; color: white; border: none; padding: 16px; width: 100%; border-radius: 14px; font-weight: bold; }
+        input, select { width: 100%; padding: 14px; margin: 5px 0 20px; border: 1px solid #eee; border-radius: 12px; box-sizing: border-box; font-size: 1rem; }
+        .save-btn { background: #111; color: white; border: none; padding: 16px; width: 100%; border-radius: 14px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -120,6 +125,7 @@
 
     <div class="container">
         <div id="cardList"></div>
+
         <div id="addArea" class="section-content">
             <input type="text" id="nameInput" placeholder="カード名">
             <input type="tel" id="cardInput" placeholder="バーコード番号">
@@ -134,12 +140,12 @@
         </div>
 
         <div style="text-align: center; margin-top: 60px;">
-            <button id="settingsToggle" style="background:none; border:none; color:#bbb; font-size:0.7rem; font-weight:bold;">⚙ DATA SETTINGS</button>
+            <button id="settingsToggle" style="background:none; border:none; color:#bbb; font-size:0.7rem; font-weight:bold; cursor:pointer;">⚙ DATA SETTINGS</button>
         </div>
         <div id="backupArea" class="section-content">
             <button id="exportBtn" style="width:100%; padding:10px; margin-bottom:10px;">書き出し</button>
             <textarea id="backupText" style="width:100%; height:50px; font-size:10px;" readonly></textarea>
-            <input type="text" id="importInput" placeholder="コード貼付">
+            <input type="text" id="importInput" placeholder="復元コード貼付">
             <button id="importBtn" style="width:100%; padding:10px; background:#111; color:white; border-radius:10px; border:none;">復元</button>
         </div>
     </div>
@@ -150,9 +156,10 @@
             <div id="detailTopTitle" style="font-weight:900;">CARD</div>
             <div style="width:40px;"></div>
         </div>
-        <div class="detail-card-area">
-            <div id="detailHeader" class="card-visual"></div>
-            <div class="barcode-display">
+        
+        <div class="detail-card-base">
+            <div id="detailHeader" class="detail-header-color"></div>
+            <div class="detail-barcode-area">
                 <svg id="barcode"></svg>
             </div>
         </div>
@@ -166,7 +173,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("saveBtn").addEventListener("click", addCard);
     document.getElementById("exportBtn").addEventListener("click", exportData);
     document.getElementById("importBtn").addEventListener("click", importData);
-    document.getElementById("backBtn").addEventListener("click", () => document.getElementById("detailView").style.display = "none");
+    document.getElementById("backBtn").addEventListener("click", () => {
+        document.getElementById("detailView").style.display = "none";
+    });
 });
 
 function displayList(){
@@ -186,6 +195,8 @@ function displayList(){
 function openDetail(index){
     const card = getList()[index];
     const header = document.getElementById("detailHeader");
+    
+    // 値のセット
     header.style.backgroundColor = card.color;
     header.innerText = card.name;
     document.getElementById("detailTopTitle").innerText = card.name.toUpperCase();
@@ -193,14 +204,15 @@ function openDetail(index){
     
     const format = (card.num.length === 13 && /^\d+$/.test(card.num)) ? "EAN13" : "CODE128";
     
+    // バーコード描画
     JsBarcode("#barcode", card.num, {
         format: format,
         displayValue: true,
-        width: 2.0,
+        width: 2.2,
         height: 100,
-        fontSize: 18,
-        margin: 0,       /* バーコード自体の余白をゼロに */
-        background: ""   /* 背景を透過させて親の白に任せる */
+        fontSize: 20,
+        margin: 0,
+        background: "#ffffff" // 親の背景と同じ白に強制
     });
 }
 
@@ -214,6 +226,8 @@ function addCard(){
         saveList(list);
         displayList();
         toggleSection();
+        document.getElementById("nameInput").value = "";
+        document.getElementById("cardInput").value = "";
     }
 }
 
@@ -236,7 +250,7 @@ function exportData(){ document.getElementById("backupText").value = localStorag
 function importData(){
     try {
         const parsed = JSON.parse(document.getElementById("importInput").value);
-        if(Array.isArray(parsed)) { saveList(parsed); displayList(); alert("完了"); }
+        if(Array.isArray(parsed)) { saveList(parsed); displayList(); alert("復元完了"); }
     } catch { alert("失敗"); }
 }
 </script>
