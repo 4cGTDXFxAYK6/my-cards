@@ -14,8 +14,8 @@
 
     <style>
         :root {
-            --bg-color: #f1f3f5;
-            --card-radius: 20px;
+            --bg-color: #f2f4f6;
+            --card-radius: 22px;
             --accent-pink: #e91e63;
         }
 
@@ -28,22 +28,25 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* ヘッダー：シンプルに中央寄せ */
+        /* ヘッダー：タイトルを完全中央寄せ */
         .header {
             background: white;
             padding: 15px 20px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center; /* 中央寄せ */
             position: sticky;
             top: 0;
             z-index: 10;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            box-shadow: 0 1px 5px rgba(0,0,0,0.02);
         }
         .header-title { 
             font-weight: 900; 
-            font-size: 1.5rem; 
-            letter-spacing: -1px;
+            font-size: 1.4rem; 
+            letter-spacing: -0.5px;
+            flex-grow: 1;
+            text-align: center;
+            margin-left: 40px; /* 右のボタンとのバランス用 */
         }
         .plus-btn { 
             color: var(--accent-pink); 
@@ -51,21 +54,21 @@
             cursor: pointer; 
             border: none; 
             background: none;
-            padding: 0;
+            width: 40px;
             font-weight: bold;
         }
 
         .container { padding: 20px 15px; max-width: 500px; margin: 0 auto; }
 
-        /* 2列グリッドレイアウト */
+        /* 2列グリッド */
         #cardList {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 12px;
         }
 
         .list-item {
-            aspect-ratio: 1 / 0.85;
+            aspect-ratio: 1 / 0.8;
             border-radius: var(--card-radius);
             display: flex;
             flex-direction: column;
@@ -73,11 +76,10 @@
             justify-content: center;
             position: relative;
             cursor: pointer;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.06);
-            transition: transform 0.15s ease;
-            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: transform 0.1s ease;
         }
-        .list-item:active { transform: scale(0.95); }
+        .list-item:active { transform: scale(0.96); }
 
         .list-item-name {
             color: white;
@@ -85,7 +87,6 @@
             font-size: 1.1rem;
             text-align: center;
             padding: 10px;
-            word-break: break-all;
             line-height: 1.2;
         }
 
@@ -93,20 +94,19 @@
             position: absolute;
             top: 8px;
             right: 8px;
-            background: rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.25);
             border: none;
             color: white;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            font-size: 12px;
-            cursor: pointer;
+            width: 22px;
+            height: 22px;
+            font-size: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        /* 詳細画面：画像UIを再現 */
+        /* 詳細画面：アクション項目なしのクリーン設計 */
         #detailView {
             display: none;
             position: fixed;
@@ -126,49 +126,32 @@
         .detail-card-area {
             background: white;
             margin: 20px;
-            border-radius: 24px;
+            border-radius: 28px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
         }
         .card-visual {
-            height: 140px;
+            height: 150px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 1.8rem;
+            font-size: 2rem;
             font-weight: 900;
         }
         .barcode-display {
-            padding: 40px 20px;
+            padding: 50px 20px;
             background: white;
             display: flex;
             justify-content: center;
         }
         #barcode { width: 100%; height: auto; max-width: 320px; }
 
-        .action-list {
-            background: white;
-            margin: 0 20px;
-            border-radius: 20px;
-            overflow: hidden;
-        }
-        .action-item {
-            padding: 18px 20px;
-            border-bottom: 1px solid #f2f2f2;
-            display: flex;
-            align-items: center;
-            color: var(--accent-pink);
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-        .action-item:last-child { border-bottom: none; }
-
         /* 設定・追加エリア */
-        .section-content { display: none; background: white; padding: 25px; border-radius: 20px; margin-top: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        label { font-size: 0.75rem; font-weight: bold; color: #888; margin-left: 5px; }
-        input, select { width: 100%; padding: 14px; margin: 5px 0 20px; border: 1px solid #eee; border-radius: 12px; box-sizing: border-box; background: #fafafa; font-size: 1rem; outline: none; }
-        .save-btn { background: #111; color: white; border: none; padding: 16px; width: 100%; border-radius: 14px; font-weight: bold; font-size: 1rem; cursor: pointer; }
+        .section-content { display: none; background: white; padding: 25px; border-radius: 20px; margin-top: 15px; }
+        label { font-size: 0.7rem; font-weight: bold; color: #999; margin-left: 5px; }
+        input, select { width: 100%; padding: 14px; margin: 5px 0 20px; border: 1px solid #f0f0f0; border-radius: 12px; box-sizing: border-box; background: #fafafa; font-size: 1rem; outline: none; }
+        .save-btn { background: #111; color: white; border: none; padding: 16px; width: 100%; border-radius: 14px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -194,16 +177,15 @@
                 <option value="#005bac">Blue (YAMADA)</option>
                 <option value="#1a1a1a">Black</option>
                 <option value="#43A047">Green</option>
-                <option value="#8E24AA">Purple</option>
             </select>
-            <button class="save-btn" id="saveBtn">カードを保存する</button>
+            <button class="save-btn" id="saveBtn">保存する</button>
         </div>
 
-        <div style="text-align: center; margin-top: 50px;">
-            <button id="settingsToggle" style="background:none; border:none; color:#ccc; font-size:0.75rem; font-weight:bold; letter-spacing:1px; cursor:pointer;">⚙ SETTINGS / BACKUP</button>
+        <div style="text-align: center; margin-top: 60px;">
+            <button id="settingsToggle" style="background:none; border:none; color:#bbb; font-size:0.7rem; font-weight:bold; cursor:pointer;">⚙ DATA SETTINGS</button>
         </div>
         <div id="backupArea" class="section-content">
-            <button id="exportBtn" style="width:100%; padding:12px; margin-bottom:10px; border-radius:10px; border:1px solid #eee; background:white; font-weight:bold;">データを書き出す</button>
+            <button id="exportBtn" style="width:100%; padding:12px; margin-bottom:10px; border-radius:10px; border:1px solid #eee; background:white;">データを書き出す</button>
             <textarea id="backupText" style="font-size:10px; height:60px; width:100%; border:1px solid #eee; padding:5px; border-radius:8px;" readonly></textarea>
             <input type="text" id="importInput" placeholder="復元コードを貼付" style="margin-top:15px; margin-bottom:10px;">
             <button id="importBtn" style="width:100%; padding:12px; background:#111; color:white; border:none; border-radius:10px; font-weight:bold;">データを復元</button>
@@ -212,27 +194,18 @@
 
     <div id="detailView">
         <div class="detail-nav">
-            <div id="backBtn" style="font-size: 1.2rem; cursor:pointer; padding: 5px 10px;">✕</div>
-            <div id="detailTopTitle">詳細</div>
-            <div style="color:var(--accent-pink); cursor:pointer;">編集</div>
-        </div>
+            <div id="backBtn" style="font-size: 1.5rem; cursor:pointer; padding: 0 10px;">✕</div>
+            <div id="detailTopTitle" style="font-weight:900;">CARD</div>
+            <div style="width:40px;"></div> </div>
         <div class="detail-card-area">
             <div id="detailHeader" class="card-visual"></div>
             <div class="barcode-display">
                 <svg id="barcode"></svg>
             </div>
         </div>
-        <div class="action-list">
-            <div class="action-item">📷 カードの写真を追加</div>
-            <div class="action-item">📄 メモを記入</div>
-            <div class="action-item">🔗 カード情報を共有</div>
         </div>
-    </div>
 
 <script>
-/**
- * 機能ロジック（提供されたJSをベースにタイルUI用に調整）
- */
 document.addEventListener("DOMContentLoaded", () => {
     displayList();
     document.getElementById("addToggle").addEventListener("click", () => toggleSection("addArea"));
@@ -288,8 +261,6 @@ function addCard(){
         toggleSection();
         document.getElementById("nameInput").value = "";
         document.getElementById("cardInput").value = "";
-    } else {
-        alert("名前と番号を入力してください");
     }
 }
 
@@ -297,19 +268,17 @@ function openDetail(index){
     const card = getList()[index];
     document.getElementById("detailHeader").style.backgroundColor = card.color;
     document.getElementById("detailHeader").innerText = card.name;
-    document.getElementById("detailTopTitle").innerText = card.name;
+    document.getElementById("detailTopTitle").innerText = card.name.toUpperCase();
     document.getElementById("detailView").style.display = "flex";
     
-    // JAN(EAN13)かCODE128かを自動判定
     const format = (card.num.length === 13 && /^\d+$/.test(card.num)) ? "EAN13" : "CODE128";
     
     JsBarcode("#barcode", card.num, {
         format: format,
         displayValue: true,
-        width: 2.2,
-        height: 100,
+        width: 2.3,
+        height: 110,
         fontSize: 22,
-        textMargin: 10,
         margin: 10,
         background: "#ffffff"
     });
@@ -325,11 +294,9 @@ function toggleSection(id){
     if(id === "addArea") {
         add.style.display = (add.style.display === "block") ? "none" : "block";
         back.style.display = "none";
-        if(add.style.display === "block") add.scrollIntoView({behavior: "smooth"});
     } else if (id === "backupArea") {
         back.style.display = (back.style.display === "block") ? "none" : "block";
         add.style.display = "none";
-        if(back.style.display === "block") back.scrollIntoView({behavior: "smooth"});
     } else {
         add.style.display = "none";
         back.style.display = "none";
@@ -337,7 +304,7 @@ function toggleSection(id){
 }
 
 function deleteCard(index){
-    if(confirm("このカードを削除しますか？")){
+    if(confirm("カードを削除しますか？")){
         const list = getList();
         list.splice(index, 1);
         saveList(list);
@@ -351,14 +318,9 @@ function exportData(){ document.getElementById("backupText").value = localStorag
 function importData(){
     try {
         const code = document.getElementById("importInput").value;
-        if(!code) return;
         const parsed = JSON.parse(code);
-        if(Array.isArray(parsed)) { 
-            saveList(parsed); 
-            displayList();
-            alert("復元が完了しました");
-        }
-    } catch { alert("無効なコードです"); }
+        if(Array.isArray(parsed)) { saveList(parsed); displayList(); alert("復元成功"); }
+    } catch { alert("エラー"); }
 }
 </script>
 </body>
