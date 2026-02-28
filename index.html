@@ -84,14 +84,14 @@
             color: white; font-size: 2.2rem; font-weight: 900;
         }
         .flat-barcode-area { 
-            padding: 40px 40px 50px; 
+            padding: 40px 30px 50px; 
             background: white; 
             display: flex; justify-content: center; align-items: center; 
         }
         svg#barcode { 
             width: 100% !important; 
             height: auto; 
-            max-width: 280px; 
+            max-width: 300px; 
         }
 
         .section-content { display: none; background: white; padding: 25px; border-radius: 20px; margin-top: 15px; border: 1px solid #eee; box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
@@ -220,18 +220,31 @@ function openDetail(index){
     document.getElementById("detailTopTitle").innerText = card.name;
     document.getElementById("detailView").style.display = "flex";
     
-    // 桁数によってフォーマットを自動判定（JAN13 or JAN8）
     const num = card.num;
-    let formatType = "CODE128"; // デフォルト
-    if(num.length === 13) formatType = "EAN13";
-    else if(num.length === 8) formatType = "EAN8";
+    let formatType = "CODE128"; // 基本
+    let barWidth = 1.6;
+
+    // 桁数に応じた最適化
+    if(num.length === 13) {
+        formatType = "EAN13";
+        barWidth = 1.8;
+    } else if(num.length === 8) {
+        formatType = "EAN8";
+        barWidth = 2.2;
+    } else if(num.length >= 15) {
+        // 18桁などの長い数字は「サブセットC」を明示的に指定して密度を安定させる
+        // JSBarcodeでは [C] を先頭につけるとCODE128Cモードになる場合があるが
+        // ライブラリの自動判別に任せつつ、widthを狭めるのが最も安全
+        formatType = "CODE128";
+        barWidth = 1.3; // 18桁だと横に広がるのでさらに細くする
+    }
 
     JsBarcode("#barcode", num, {
         format: formatType,
         displayValue: true,
-        width: 1.8,
+        width: barWidth,
         height: 100,
-        fontSize: 20,
+        fontSize: 18,
         margin: 10,
         background: "#ffffff"
     });
@@ -239,7 +252,7 @@ function openDetail(index){
 
 function addCard(){
     const name = document.getElementById("nameInput").value;
-    const num = document.getElementById("cardInput").value.trim().replace(/[^0-9]/g, ''); // 数字以外を除去
+    const num = document.getElementById("cardInput").value.trim().replace(/[^0-9]/g, '');
     const color = document.getElementById("colorInput").value;
     if(name && num){
         const list = getList();
