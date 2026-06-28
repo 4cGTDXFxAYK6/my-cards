@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes"> 
-    <meta name="apple-mobile-web-app-title" content="MyCards"> 
-    <link rel="apple-touch-icon" href="icon-192.png"> 
-
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="MyCards">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <title>MyCards.</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -171,8 +170,8 @@
     </div>
 
 <script>
-// 現在詳細表示中のカードのインデックス
-let currentEditingIndex = null;
+// 現在詳細表示中のカードのID（インデックスではなくIDで管理）
+let currentEditingId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     displayList();
@@ -185,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("backBtn").addEventListener("click", () => {
         document.getElementById("detailView").style.display = "none";
     });
-    document.getElementById("deleteCardBtn").addEventListener("click", () => deleteCard(currentEditingIndex));
+    document.getElementById("deleteCardBtn").addEventListener("click", () => deleteCard(currentEditingId));
 });
 
 // ドラッグ並び替えの初期化
@@ -227,13 +226,13 @@ function displayList() {
         return;
     }
 
-    list.forEach((card, index) => {
+    list.forEach((card) => {
         const div = document.createElement("div");
         div.className = "list-item";
         div.style.backgroundColor = card.color;
         // data-json はドラッグ後の順序取得に使用
         div.setAttribute("data-json", JSON.stringify(card));
-        div.addEventListener("click", () => openDetail(index));
+        div.addEventListener("click", () => openDetail(card.id));
 
         // ✅ XSS対策: innerHTML ではなく DOM操作 + textContent を使用
         const infoDiv = document.createElement("div");
@@ -257,10 +256,11 @@ function displayList() {
     updateLogoColor();
 }
 
-// 詳細画面を開く
-function openDetail(index) {
-    currentEditingIndex = index;
-    const card = getList()[index];
+// 詳細画面を開く（IDで検索するのでドラッグ後もズレない）
+function openDetail(id) {
+    currentEditingId = id;
+    const card = getList().find(c => c.id === id);
+    if (!card) return;
 
     const container = document.getElementById("flatCardContainer");
     container.style.background = `linear-gradient(145deg, ${card.color} 0%, ${card.color}cc 100%)`;
@@ -308,7 +308,7 @@ function addCard() {
     if (!num) { alert("バーコード番号を入力してください"); return; }
 
     const list = getList();
-    list.push({ name, num, color });
+    list.push({ id: Date.now(), name, num, color });
     saveList(list);
     displayList();
     toggleSection(); // 追加フォームを閉じる
@@ -333,11 +333,11 @@ function toggleSection(id) {
     }
 }
 
-// カードを削除
-function deleteCard(index) {
+// カードを削除（IDで検索して削除するのでインデックスズレが起きない）
+function deleteCard(id) {
+    if (!id) return;
     if (confirm("削除しますか？")) {
-        const list = getList();
-        list.splice(index, 1);
+        const list = getList().filter(c => c.id !== id);
         saveList(list);
         displayList();
         document.getElementById("detailView").style.display = "none";
