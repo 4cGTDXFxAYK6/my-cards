@@ -212,7 +212,15 @@ function updateLogoColor() {
 
 // カード一覧を描画
 function displayList() {
-    const list = getList();
+    // 既存カード（id未設定）にIDを補完して保存
+    let list = getList();
+    let updated = false;
+    list = list.map(card => {
+        if (card.id == null) { updated = true; return { ...card, id: Date.now() + Math.random() }; }
+        return card;
+    });
+    if (updated) saveList(list);
+
     const container = document.getElementById("cardList");
     container.innerHTML = "";
 
@@ -335,7 +343,7 @@ function toggleSection(id) {
 
 // カードを削除（IDで検索して削除するのでインデックスズレが起きない）
 function deleteCard(id) {
-    if (!id) return;
+    if (id == null) return;
     if (confirm("削除しますか？")) {
         const list = getList().filter(c => c.id !== id);
         saveList(list);
