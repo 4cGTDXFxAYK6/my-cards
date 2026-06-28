@@ -40,6 +40,15 @@
         .container { padding: 15px; max-width: 500px; margin: 0 auto; }
 
         #cardList { display: flex; flex-direction: column; gap: 10px; }
+
+        /* 空リスト表示 */
+        .empty-message {
+            text-align: center;
+            color: #ccc;
+            padding: 60px 20px;
+            font-size: 0.95rem;
+        }
+
         .list-item {
             height: 70px;
             border-radius: 16px;
@@ -99,8 +108,8 @@
             width: 100%; padding: 16px; margin: 8px 0 16px; border: 1px solid #eee; border-radius: 12px; 
             box-sizing: border-box; font-size: 1rem; background: #fdfdfd; color: #333;
         }
-        .save-btn { background: #111; color: white; border: none; padding: 18px; width: 100%; border-radius: 14px; font-weight: bold; font-size: 1.1rem; }
-        .delete-link { color: #ccc; background: none; border: none; font-size: 0.8rem; text-decoration: underline; margin-top: 25px; margin-bottom: 15px; }
+        .save-btn { background: #111; color: white; border: none; padding: 18px; width: 100%; border-radius: 14px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+        .delete-link { color: #ccc; background: none; border: none; font-size: 0.8rem; text-decoration: underline; margin-top: 25px; margin-bottom: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -131,10 +140,10 @@
             <button id="settingsToggle" style="background:none; border:none; color:#888; font-size:0.7rem; font-weight:bold;">SETTINGS</button>
         </div>
         <div id="backupArea" class="section-content">
-            <button id="exportBtn" style="width:100%; padding:12px; background:#f8f9fa; color:#333; border:1px solid #ddd; border-radius:10px;">書き出し</button>
-            <textarea id="backupText" style="width:100%; height:40px; background:#fafafa; color:#888; border:1px solid #eee; padding:10px; font-size:10px; margin-top:10px;" readonly></textarea>
+            <button id="exportBtn" style="width:100%; padding:12px; background:#f8f9fa; color:#333; border:1px solid #ddd; border-radius:10px; cursor:pointer;">書き出し</button>
+            <textarea id="backupText" style="width:100%; height:40px; background:#fafafa; color:#888; border:1px solid #eee; padding:10px; font-size:10px; margin-top:10px; box-sizing:border-box;" readonly></textarea>
             <input type="text" id="importInput" placeholder="コードを貼付" style="margin-top:10px;">
-            <button id="importBtn" style="width:100%; padding:12px; background:#111; color:white; border:none; border-radius:10px; font-weight:bold;">復元</button>
+            <button id="importBtn" style="width:100%; padding:12px; background:#111; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">復元</button>
         </div>
     </div>
 
@@ -158,6 +167,7 @@
     </div>
 
 <script>
+// 現在詳細表示中のカードのインデックス
 let currentEditingIndex = null;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -168,75 +178,108 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("saveBtn").addEventListener("click", addCard);
     document.getElementById("exportBtn").addEventListener("click", exportData);
     document.getElementById("importBtn").addEventListener("click", importData);
-    document.getElementById("backBtn").addEventListener("click", () => document.getElementById("detailView").style.display = "none");
+    document.getElementById("backBtn").addEventListener("click", () => {
+        document.getElementById("detailView").style.display = "none";
+    });
     document.getElementById("deleteCardBtn").addEventListener("click", () => deleteCard(currentEditingIndex));
 });
 
+// ドラッグ並び替えの初期化
 function initSortable() {
-    Sortable.create(document.getElementById('cardList'), {
-        handle: '.drag-handle', animation: 200,
+    Sortable.create(document.getElementById("cardList"), {
+        handle: ".drag-handle",
+        animation: 200,
         onEnd: () => {
             const newList = [];
-            document.querySelectorAll('.list-item').forEach(item => newList.push(JSON.parse(item.getAttribute('data-json'))));
+            document.querySelectorAll(".list-item").forEach(item => {
+                newList.push(JSON.parse(item.getAttribute("data-json")));
+            });
             saveList(newList);
             updateLogoColor();
         }
     });
 }
 
+// ロゴの "a" を最後のカード色に変更
 function updateLogoColor() {
     const list = getList();
     const logoA = document.getElementById("logo-a");
-    if (list.length > 0) {
-        logoA.style.color = list[list.length - 1].color;
-    }
+    logoA.style.color = list.length > 0 ? list[list.length - 1].color : "";
 }
 
-function displayList(){
+// カード一覧を描画
+function displayList() {
     const list = getList();
     const container = document.getElementById("cardList");
     container.innerHTML = "";
+
+    // 空リスト表示（app.js から取り込み）
+    if (list.length === 0) {
+        const p = document.createElement("p");
+        p.className = "empty-message";
+        p.textContent = "カードがありません";
+        container.appendChild(p);
+        updateLogoColor();
+        return;
+    }
+
     list.forEach((card, index) => {
         const div = document.createElement("div");
         div.className = "list-item";
         div.style.backgroundColor = card.color;
-        div.setAttribute('data-json', JSON.stringify(card));
-        div.onclick = () => openDetail(index);
-        div.innerHTML = `
-            <div class="card-info"><div class="card-name">${card.name}</div></div>
-            <div class="drag-handle" onclick="event.stopPropagation()"></div>
-        `;
+        // data-json はドラッグ後の順序取得に使用
+        div.setAttribute("data-json", JSON.stringify(card));
+        div.addEventListener("click", () => openDetail(index));
+
+        // ✅ XSS対策: innerHTML ではなく DOM操作 + textContent を使用
+        const infoDiv = document.createElement("div");
+        infoDiv.className = "card-info";
+
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "card-name";
+        nameDiv.textContent = card.name; // ← textContent でエスケープ
+
+        infoDiv.appendChild(nameDiv);
+
+        const handle = document.createElement("div");
+        handle.className = "drag-handle";
+        handle.addEventListener("click", e => e.stopPropagation());
+
+        div.appendChild(infoDiv);
+        div.appendChild(handle);
         container.appendChild(div);
     });
+
     updateLogoColor();
 }
 
-function openDetail(index){
+// 詳細画面を開く
+function openDetail(index) {
     currentEditingIndex = index;
     const card = getList()[index];
+
     const container = document.getElementById("flatCardContainer");
     container.style.background = `linear-gradient(145deg, ${card.color} 0%, ${card.color}cc 100%)`;
-    document.getElementById("detailHeaderName").innerText = card.name;
-    document.getElementById("detailTopTitle").innerText = card.name;
+
+    // ✅ XSS対策: textContent を使用
+    document.getElementById("detailHeaderName").textContent = card.name;
+    document.getElementById("detailTopTitle").textContent = card.name;
     document.getElementById("detailView").style.display = "flex";
-    
+
+    // 桁数に応じたバーコード形式の最適化
     const num = card.num;
-    let formatType = "CODE128"; // 基本
+    let formatType = "CODE128";
     let barWidth = 1.6;
 
-    // 桁数に応じた最適化
-    if(num.length === 13) {
+    if (num.length === 13) {
         formatType = "EAN13";
         barWidth = 1.8;
-    } else if(num.length === 8) {
+    } else if (num.length === 8) {
         formatType = "EAN8";
         barWidth = 2.2;
-    } else if(num.length >= 15) {
-        // 18桁などの長い数字は「サブセットC」を明示的に指定して密度を安定させる
-        // JSBarcodeでは [C] を先頭につけるとCODE128Cモードになる場合があるが
-        // ライブラリの自動判別に任せつつ、widthを狭めるのが最も安全
+    } else if (num.length >= 15) {
         formatType = "CODE128";
-        barWidth = 1.3; // 18桁だと横に広がるのでさらに細くする
+        barWidth = 1.3;
     }
 
     JsBarcode("#barcode", num, {
@@ -250,42 +293,77 @@ function openDetail(index){
     });
 }
 
-function addCard(){
-    const name = document.getElementById("nameInput").value;
-    const num = document.getElementById("cardInput").value.trim().replace(/[^0-9]/g, '');
+// カードを追加
+function addCard() {
+    const name = document.getElementById("nameInput").value.trim();
+    // 数字以外を除去
+    const num = document.getElementById("cardInput").value.trim().replace(/[^0-9]/g, "");
     const color = document.getElementById("colorInput").value;
-    if(name && num){
-        const list = getList();
-        list.push({name, num, color});
-        saveList(list); displayList(); toggleSection();
-        document.getElementById("nameInput").value = "";
-        document.getElementById("cardInput").value = "";
+
+    if (!name) { alert("カード名を入力してください"); return; }
+    if (!num) { alert("バーコード番号を入力してください"); return; }
+
+    const list = getList();
+    list.push({ name, num, color });
+    saveList(list);
+    displayList();
+    toggleSection(); // 追加フォームを閉じる
+
+    document.getElementById("nameInput").value = "";
+    document.getElementById("cardInput").value = "";
+}
+
+// セクションの開閉トグル（addArea / backupArea）
+function toggleSection(id) {
+    const add = document.getElementById("addArea");
+    const back = document.getElementById("backupArea");
+    if (id === "addArea") {
+        add.style.display = (add.style.display === "block") ? "none" : "block";
+        back.style.display = "none";
+    } else if (id === "backupArea") {
+        back.style.display = (back.style.display === "block") ? "none" : "block";
+        add.style.display = "none";
+    } else {
+        add.style.display = "none";
+        back.style.display = "none";
     }
 }
 
-function toggleSection(id){
-    const add = document.getElementById("addArea"), back = document.getElementById("backupArea");
-    if(id === "addArea") { add.style.display = (add.style.display === "block") ? "none" : "block"; back.style.display = "none"; }
-    else if(id === "backupArea") { back.style.display = (back.style.display === "block") ? "none" : "block"; add.style.display = "none"; }
-    else { add.style.display = back.style.display = "none"; }
-}
-
-function deleteCard(index){
-    if(confirm("削除しますか？")){
-        const list = getList(); list.splice(index, 1);
-        saveList(list); displayList();
+// カードを削除
+function deleteCard(index) {
+    if (confirm("削除しますか？")) {
+        const list = getList();
+        list.splice(index, 1);
+        saveList(list);
+        displayList();
         document.getElementById("detailView").style.display = "none";
     }
 }
 
-function getList(){ return JSON.parse(localStorage.getItem("cardList") || "[]"); }
-function saveList(list){ localStorage.setItem("cardList", JSON.stringify(list)); }
-function exportData(){ document.getElementById("backupText").value = localStorage.getItem("cardList"); }
-function importData(){
+// データ取得・保存
+function getList() { return JSON.parse(localStorage.getItem("cardList") || "[]"); }
+function saveList(list) { localStorage.setItem("cardList", JSON.stringify(list)); }
+
+// バックアップ書き出し
+function exportData() {
+    document.getElementById("backupText").value = localStorage.getItem("cardList") || "[]";
+}
+
+// バックアップ復元（✅ 上書き前に確認ダイアログを追加）
+function importData() {
+    const input = document.getElementById("importInput").value.trim();
+    if (!input) return;
     try {
-        const parsed = JSON.parse(document.getElementById("importInput").value);
-        if(Array.isArray(parsed)) { saveList(parsed); displayList(); alert("完了"); }
-    } catch { alert("エラー"); }
+        const parsed = JSON.parse(input);
+        if (!Array.isArray(parsed)) throw new Error();
+        if (!confirm(`${parsed.length}件のカードを復元します。現在のデータは上書きされます。よろしいですか？`)) return;
+        saveList(parsed);
+        displayList();
+        document.getElementById("importInput").value = "";
+        alert("復元しました");
+    } catch {
+        alert("無効なコードです");
+    }
 }
 </script>
 </body>
