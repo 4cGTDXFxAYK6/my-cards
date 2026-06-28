@@ -216,8 +216,8 @@ function displayList() {
     let list = getList();
     let updated = false;
     list = list.map(card => {
-        if (card.id == null) { updated = true; return { ...card, id: Date.now() + Math.random() }; }
-        return card;
+        if (card.id == null) { updated = true; return { ...card, id: String(Date.now()) + String(Math.floor(Math.random()*10000)) }; }
+        return { ...card, id: String(card.id) }; // 数値IDも文字列に統一
     });
     if (updated) saveList(list);
 
@@ -266,8 +266,8 @@ function displayList() {
 
 // 詳細画面を開く（IDで検索するのでドラッグ後もズレない）
 function openDetail(id) {
-    currentEditingId = id;
-    const card = getList().find(c => c.id === id);
+    currentEditingId = String(id);
+    const card = getList().find(c => String(c.id) === String(id));
     if (!card) return;
 
     const container = document.getElementById("flatCardContainer");
@@ -316,7 +316,7 @@ function addCard() {
     if (!num) { alert("バーコード番号を入力してください"); return; }
 
     const list = getList();
-    list.push({ id: Date.now(), name, num, color });
+    list.push({ id: String(Date.now()), name, num, color });
     saveList(list);
     displayList();
     toggleSection(); // 追加フォームを閉じる
@@ -345,7 +345,7 @@ function toggleSection(id) {
 function deleteCard(id) {
     if (id == null) return;
     if (confirm("削除しますか？")) {
-        const list = getList().filter(c => c.id !== id);
+        const list = getList().filter(c => String(c.id) !== String(id));
         saveList(list);
         displayList();
         document.getElementById("detailView").style.display = "none";
