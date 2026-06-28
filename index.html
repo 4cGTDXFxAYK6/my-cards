@@ -170,8 +170,9 @@
     </div>
 
 <script>
-// 現在詳細表示中のカードのID（インデックスではなくIDで管理）
-let currentEditingId = null;
+// 詳細画面で開いているカードのnum（バーコード番号）を保持
+// numはユーザー入力値で実質ユニーク、かつJSONを経由しても型が変わらない文字列
+let currentCardNum = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     displayList();
@@ -184,7 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("backBtn").addEventListener("click", () => {
         document.getElementById("detailView").style.display = "none";
     });
-    document.getElementById("deleteCardBtn").addEventListener("click", () => deleteCard(currentEditingId));
+    document.getElementById("deleteCardBtn").addEventListener("click", deleteCurrentCard);
 });
 
 // ドラッグ並び替えの初期化
@@ -212,19 +213,10 @@ function updateLogoColor() {
 
 // カード一覧を描画
 function displayList() {
-    // 既存カード（id未設定）にIDを補完して保存
-    let list = getList();
-    let updated = false;
-    list = list.map(card => {
-        if (card.id == null) { updated = true; return { ...card, id: String(Date.now()) + String(Math.floor(Math.random()*10000)) }; }
-        return { ...card, id: String(card.id) }; // 数値IDも文字列に統一
-    });
-    if (updated) saveList(list);
-
+    const list = getList();
     const container = document.getElementById("cardList");
     container.innerHTML = "";
 
-    // 空リスト表示（app.js から取り込み）
     if (list.length === 0) {
         const p = document.createElement("p");
         p.className = "empty-message";
@@ -238,18 +230,14 @@ function displayList() {
         const div = document.createElement("div");
         div.className = "list-item";
         div.style.backgroundColor = card.color;
-        // data-json はドラッグ後の順序取得に使用
         div.setAttribute("data-json", JSON.stringify(card));
-        div.addEventListener("click", () => openDetail(card.id));
+        div.addEventListener("click", () => openDetail(card));
 
-        // ✅ XSS対策: innerHTML ではなく DOM操作 + textContent を使用
         const infoDiv = document.createElement("div");
         infoDiv.className = "card-info";
-
         const nameDiv = document.createElement("div");
         nameDiv.className = "card-name";
-        nameDiv.textContent = card.name; // ← textContent でエスケープ
-
+        nameDiv.textContent = card.name;
         infoDiv.appendChild(nameDiv);
 
         const handle = document.createElement("div");
@@ -264,35 +252,23 @@ function displayList() {
     updateLogoColor();
 }
 
-// 詳細画面を開く（IDで検索するのでドラッグ後もズレない）
-function openDetail(id) {
-    currentEditingId = String(id);
-    const card = getList().find(c => String(c.id) === String(id));
-    if (!card) return;
+// 詳細画面を開く（cardオブジェクトをそのまま受け取る）
+function openDetail(card) {
+    // numを保持しておく（削除時に使う）
+    currentCardNum = card.num;
 
     const container = document.getElementById("flatCardContainer");
     container.style.background = `linear-gradient(145deg, ${card.color} 0%, ${card.color}cc 100%)`;
-
-    // ✅ XSS対策: textContent を使用
     document.getElementById("detailHeaderName").textContent = card.name;
     document.getElementById("detailTopTitle").textContent = card.name;
     document.getElementById("detailView").style.display = "flex";
 
-    // 桁数に応じたバーコード形式の最適化
     const num = card.num;
     let formatType = "CODE128";
     let barWidth = 1.6;
-
-    if (num.length === 13) {
-        formatType = "EAN13";
-        barWidth = 1.8;
-    } else if (num.length === 8) {
-        formatType = "EAN8";
-        barWidth = 2.2;
-    } else if (num.length >= 15) {
-        formatType = "CODE128";
-        barWidth = 1.3;
-    }
+    if (num.length === 13) { formatType = "EAN13"; barWidth = 1.8; }
+    else if (num.length === 8) { formatType = "EAN8"; barWidth = 2.2; }
+    else if (num.length >= 15) { barWidth = 1.3; }
 
     JsBarcode("#barcode", num, {
         format: formatType,
@@ -308,7 +284,6 @@ function openDetail(id) {
 // カードを追加
 function addCard() {
     const name = document.getElementById("nameInput").value.trim();
-    // 数字以外を除去
     const num = document.getElementById("cardInput").value.trim().replace(/[^0-9]/g, "");
     const color = document.getElementById("colorInput").value;
 
@@ -316,39 +291,38 @@ function addCard() {
     if (!num) { alert("バーコード番号を入力してください"); return; }
 
     const list = getList();
-    list.push({ id: String(Date.now()), name, num, color });
+    list.push({ name, num, color });
     saveList(list);
     displayList();
-    toggleSection(); // 追加フォームを閉じる
-
+    toggleSection();
     document.getElementById("nameInput").value = "";
     document.getElementById("cardInput").value = "";
 }
 
-// セクションの開閉トグル（addArea / backupArea）
-function toggleSection(id) {
+// 現在表示中のカードを削除（numで一致するものを除去）
+function deleteCurrentCard() {
+    if (currentCardNum === null) return;
+    if (!confirm("削除しますか？")) return;
+    const newList = getList().filter(c => c.num !== currentCardNum);
+    saveList(newList);
+    displayList();
+    document.getElementById("detailView").style.display = "none";
+    currentCardNum = null;
+}
+
+// セクションの開閉トグル
+function toggleSection(sectionId) {
     const add = document.getElementById("addArea");
     const back = document.getElementById("backupArea");
-    if (id === "addArea") {
+    if (sectionId === "addArea") {
         add.style.display = (add.style.display === "block") ? "none" : "block";
         back.style.display = "none";
-    } else if (id === "backupArea") {
+    } else if (sectionId === "backupArea") {
         back.style.display = (back.style.display === "block") ? "none" : "block";
         add.style.display = "none";
     } else {
         add.style.display = "none";
         back.style.display = "none";
-    }
-}
-
-// カードを削除（IDで検索して削除するのでインデックスズレが起きない）
-function deleteCard(id) {
-    if (id == null) return;
-    if (confirm("削除しますか？")) {
-        const list = getList().filter(c => String(c.id) !== String(id));
-        saveList(list);
-        displayList();
-        document.getElementById("detailView").style.display = "none";
     }
 }
 
