@@ -1,4 +1,4 @@
-const CACHE_NAME = "mycards-v1";
+const CACHE_NAME = "mycards-v2";
 
 const FILES_TO_CACHE = [
   "./",
