@@ -127,6 +127,7 @@
         <div id="addArea" class="section-content">
             <input type="text" id="nameInput" placeholder="カード名">
             <input type="tel" id="cardInput" placeholder="バーコード番号 (数字のみ)" inputmode="numeric">
+            <div id="checkResult" style="font-size:0.85rem; margin:-8px 0 12px; padding: 0 4px; min-height:1.2em;"></div>
             <select id="colorInput">
                 <option value="#1a1a1a">⚫ Black</option>
                 <option value="#E53935">🔴 Red</option>
@@ -180,6 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("addToggle").addEventListener("click", () => toggleSection("addArea"));
     document.getElementById("settingsToggle").addEventListener("click", () => toggleSection("backupArea"));
     document.getElementById("saveBtn").addEventListener("click", addCard);
+    document.getElementById("cardInput").addEventListener("input", checkBarcode);
     document.getElementById("exportBtn").addEventListener("click", exportData);
     document.getElementById("importBtn").addEventListener("click", importData);
     document.getElementById("backBtn").addEventListener("click", () => {
@@ -291,6 +293,43 @@ function openDetail(card) {
         margin: 10,
         background: "#ffffff"
     });
+}
+
+// EANチェックデジット計算（EAN-8: 8桁 / EAN-13: 13桁）
+function calcEanCheckDigit(num) {
+    // EAN-13: 奇数位置×1 + 偶数位置×3 の合計
+    // EAN-8:  奇数位置×3 + 偶数位置×1 の合計
+    const digits = num.split("").map(Number);
+    const len = digits.length;
+    let sum = 0;
+    for (let i = 0; i < len - 1; i++) {
+        if (len === 13) {
+            sum += i % 2 === 0 ? digits[i] : digits[i] * 3;
+        } else { // EAN-8
+            sum += i % 2 === 0 ? digits[i] * 3 : digits[i];
+        }
+    }
+    return (10 - (sum % 10)) % 10;
+}
+
+// バーコード入力時にリアルタイムチェック
+function checkBarcode() {
+    const raw = document.getElementById("cardInput").value.replace(/[^0-9]/g, "");
+    const el = document.getElementById("checkResult");
+    if (raw.length !== 8 && raw.length !== 13) {
+        el.textContent = raw.length > 0 ? `${raw.length}桁（8桁か13桁でEANチェックします）` : "";
+        el.style.color = "#aaa";
+        return;
+    }
+    const expected = calcEanCheckDigit(raw);
+    const actual = Number(raw[raw.length - 1]);
+    if (expected === actual) {
+        el.textContent = `✅ チェックデジット OK（EAN-${raw.length}）`;
+        el.style.color = "#43A047";
+    } else {
+        el.textContent = `⚠️ チェックデジット不一致（最終桁は ${expected} が正しい値）`;
+        el.style.color = "#E53935";
+    }
 }
 
 // カードを追加
